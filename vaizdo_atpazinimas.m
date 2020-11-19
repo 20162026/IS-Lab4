@@ -1,164 +1,145 @@
-close all
-clear all
-clc
-%% raidþiø pavyzdþiø nuskaitymas ir poþymiø skaièiavimas
-%% read the image with hand-written characters
-pavadinimas = 'train_data.png';
-pozymiai_tinklo_mokymui = pozymiai_raidems_atpazinti(pavadinimas, 8);
-%% Atpaþintuvo kûrimas
-%% Development of character recognizer
-% poþymiai ið celiø masyvo perkeliami á matricà
-% take the features from cell-type variable and save into a matrix-type variable
-P = cell2mat(pozymiai_tinklo_mokymui);
-% sukuriama teisingø atsakymø matrica: 11 raidþiø, 8 eilutës mokymui
-% create the matrices of correct answers for each line (number of matrices = number of symbol lines)
-T = [eye(11), eye(11), eye(11), eye(11), eye(11), eye(11), eye(11), eye(11)];
-% sukuriamas SBF tinklas duotiems P ir T sàryðiams
-% create an RBF network for classification with 13 neurons, and sigma = 1
-tinklas = newrb(P,T,0,1,13);
+close all;
+clear;
+clc;
 
-%% Tinklo patikra | Test of the network (recognizer)
-% skaièiuojamas tinklo iðëjimas neþinomiems poþymiams
-% estimate output of the network for unknown symbols (row, that were not used during training)
-P2 = P(:,12:22);
-Y2 = sim(tinklas, P2);
-% ieðkoma, kuriame iðëjime gauta didþiausia reikðmë
-% find which neural network output gives maximum value
-[a2, b2] = max(Y2);
-%% Rezultato atvaizdavimas
-%% Visualize result
-% apskaièiuosime raidþiø skaièiø - poþymiø P2 stulpeliø skaièiø
-% calculate the total number of symbols in the row
-raidziu_sk = size(P2,2);
-% rezultatà saugosime kintamajame 'atsakymas'
-% we will save the result in variable 'atsakymas'
-atsakymas = [];
-for k = 1:raidziu_sk
-    switch b2(k)
-        case 1
-            % the symbol here should be the same as written first symbol in your image
-            atsakymas = [atsakymas, 'A'];
-        case 2
-            atsakymas = [atsakymas, 'B'];
-        case 3
-            atsakymas = [atsakymas, 'C'];
-        case 4
-            atsakymas = [atsakymas, 'D'];
-        case 5
-            atsakymas = [atsakymas, 'E'];
-        case 6
-            atsakymas = [atsakymas, 'F'];
-        case 7
-            atsakymas = [atsakymas, 'G'];
-        case 8
-            atsakymas = [atsakymas, 'H'];
-        case 9
-            atsakymas = [atsakymas, 'I'];
-        case 10
-            atsakymas = [atsakymas, 'K'];
-        case 11
-            atsakymas = [atsakymas, 'J'];
-    end
+
+
+neuron_min=10;
+neuron_max=30;
+
+
+%training pozymiu apskaiciavimas
+pozymiai_tinklo_mokymui = pozymiai_raidems_atpazinti_begraph('training4.png', 8,false);
+
+
+
+
+%test pozymiu apskaiciavimas
+names={'0102','1745','4321','5678','7452','69','72','3333','1678'};
+test_len=9;%test len
+for i=1:test_len
+    pavadinimas = strcat(names{i},'.png');
+    %disp(pavadinimas);
+    test_pozymiai{i}= pozymiai_raidems_atpazinti_begraph(pavadinimas, 1,0);
 end
-% pateikime rezultatà komandiniame lange
-% show the result in command window
-disp(atsakymas)
-% % figure(7), text(0.1,0.5,atsakymas,'FontSize',38)
-%% þodþio "KADA" poþymiø iðskyrimas 
-%% Extract features of the test image
-pavadinimas = 'test_kada.png';
-pozymiai_patikrai = pozymiai_raidems_atpazinti(pavadinimas, 1);
 
-%% Raidþiø atpaþinimas
-%% Perform letter/symbol recognition
-% poþymiai ið celiø masyvo perkeliami á matricà
-% features from cell-variable are stored to matrix-variable
-P2 = cell2mat(pozymiai_patikrai);
-% skaièiuojamas tinklo iðëjimas neþinomiems poþymiams
-% estimating neuran network output for newly estimated features
-Y2 = sim(tinklas, P2);
-% ieðkoma, kuriame iðëjime gauta didþiausia reikðmë
-% searching which output gives maximum value
-[a2, b2] = max(Y2);
-%% Rezultato atvaizdavimas | Visualization of result
-% apskaièiuosime raidþiø skaièiø - poþymiø P2 stulpeliø skaièiø
-% calculating number of symbols - number of columns
-raidziu_sk = size(P2,2);
-% rezultatà saugosime kintamajame 'atsakymas'
-atsakymas = [];
-for k = 1:raidziu_sk
-    switch b2(k)
-        case 1
-            atsakymas = [atsakymas, 'A'];
-        case 2
-            atsakymas = [atsakymas, 'B'];
-        case 3
-            atsakymas = [atsakymas, 'C'];
-        case 4
-            atsakymas = [atsakymas, 'D'];
-        case 5
-            atsakymas = [atsakymas, 'E'];
-        case 6
-            atsakymas = [atsakymas, 'F'];
-        case 7
-            atsakymas = [atsakymas, 'G'];
-        case 8
-            atsakymas = [atsakymas, 'H'];
-        case 9
-            atsakymas = [atsakymas, 'I'];
-        case 10
-            atsakymas = [atsakymas, 'K'];
-        case 11
-            atsakymas = [atsakymas, 'J'];
+%net=apmokyti_ff(pozymiai_tinklo_mokymui,20);
+%test_fun_ff(test_pozymiai{1},names{1},net,1);
+
+
+%% radial basis network
+for i=neuron_min:neuron_max
+    clear tinkas;
+    tinklas=apmokyti_newrb(pozymiai_tinklo_mokymui,i);
+    
+    result(i-neuron_min+1)=0;
+    for ii=1:test_len
+        result(i-neuron_min+1)=result(i-neuron_min+1)+test_fun_newrb(test_pozymiai{ii},names{ii},tinklas,0);
     end
-end
-% pateikime rezultatà komandiniame lange
-% disp(atsakymas)
-figure(8), text(0.1,0.5,atsakymas,'FontSize',38), axis off
-%% þodþio "FIKCIJA" poþymiø iðskyrimas 
-%% extract features for next/another test image
-pavadinimas = 'test_fikcija.png';
-pozymiai_patikrai = pozymiai_raidems_atpazinti(pavadinimas, 1);
 
-%% Raidþiø atpaþinimas
-% poþymiai ið celiø masyvo perkeliami á matricà
-P2 = cell2mat(pozymiai_patikrai);
-% skaièiuojamas tinklo iðëjimas neþinomiems poþymiams
-Y2 = sim(tinklas, P2);
-% ieðkoma, kuriame iðëjime gauta didþiausia reikðmë
-[a2, b2] = max(Y2);
-%% Rezultato atvaizdavimas
-% apskaièiuosime raidþiø skaièiø - poþymiø P2 stulpeliø skaièiø
-raidziu_sk = size(P2,2);
-% rezultatà saugosime kintamajame 'atsakymas'
-atsakymas = [];
-for k = 1:raidziu_sk
-    switch b2(k)
-        case 1
-            atsakymas = [atsakymas, 'A'];
-        case 2
-            atsakymas = [atsakymas, 'B'];
-        case 3
-            atsakymas = [atsakymas, 'C'];
-        case 4
-            atsakymas = [atsakymas, 'D'];
-        case 5
-            atsakymas = [atsakymas, 'E'];
-        case 6
-            atsakymas = [atsakymas, 'F'];
-        case 7
-            atsakymas = [atsakymas, 'G'];
-        case 8
-            atsakymas = [atsakymas, 'H'];
-        case 9
-            atsakymas = [atsakymas, 'I'];
-        case 10
-            atsakymas = [atsakymas, 'K'];
-        case 11
-            atsakymas = [atsakymas, 'J'];
+end
+
+%
+disp('----------------');
+for i=neuron_min:neuron_max
+   fprintf("newrb neuronai %d  tikslumas  %.2f %%\n",i,result(i-neuron_min+1)/9*100)
+end
+figure();
+plot(neuron_min:neuron_max,result,'-b');
+hold on;
+
+%% feedfowrward neural network
+for i=neuron_min:neuron_max
+    clear net;
+    %tinklas=apmokyti(pozymiai_tinklo_mokymui,i);
+    net=apmokyti_ff(pozymiai_tinklo_mokymui,i);
+    
+    result(i-neuron_min+1)=0;
+    for ii=1:test_len
+        result(i-neuron_min+1)=result(i-neuron_min+1)+test_fun_ff(test_pozymiai{ii},names{ii},net,0);
     end
-end
-% pateikime rezultatà komandiniame lange
-% disp(atsakymas)
-figure(9), text(0.1,0.5,atsakymas,'FontSize',38), axis off
 
+end
+
+%
+disp('----------------');
+for i=neuron_min:neuron_max
+   fprintf("newff neuronai %d  tikslumas  %.2f %%\n",i,result(i-neuron_min+1)/9*100);
+end
+disp('----------------');
+plot(neuron_min:neuron_max,result,'-r');
+legend('newrb', ' newff');
+
+
+
+disp('fin');
+disp('is rezultatu matosi, kad arba as naudoju newff neteisingai arba jis reikalauka zymiai didesnio data set, kai newrb rezultatai yra stabilesni ir pakankamai tikslus. daznos klaidos atsiranda del mano negrazaus rasto))');
+return
+
+%% RB apmokymo funkcija
+function tinklas=apmokyti_newrb(pozymiai_tinklo_mokymui,neuronai)
+    
+    P = cell2mat(pozymiai_tinklo_mokymui);
+    T = [eye(10), eye(10), eye(10), eye(10), eye(10), eye(10), eye(10), eye(10)];
+    tinklas = newrb(P,T,0,1,neuronai);
+    %tinklas.trainParam.showWindow = 0;
+    
+
+end
+
+
+%% RB testavimo funkcija
+function out=test_fun_newrb(pozymiai_patikrai,test,tinklas,print)
+    P2 = cell2mat(pozymiai_patikrai);
+    Y2 = sim(tinklas, P2);
+    [a2, b2] = max(Y2);
+    raidziu_sk = size(P2,2);
+    atsakymas = [];
+    for k = 1:raidziu_sk
+        atsakymas = [atsakymas, int2str(b2(k)-1)];
+    end
+    out=strcmp(atsakymas,test);
+    if print
+        if out
+           result ='good';
+        else
+            result ='fail';
+        end
+        fprintf("newrb %s  result: %s  real: %s \n",result,atsakymas,test);
+    end
+
+end
+
+%% FF apmokymo funkcija
+function net=apmokyti_ff(pozymiai_tinklo_mokymui,neuronai)
+    
+    T = [eye(10), eye(10), eye(10), eye(10), eye(10), eye(10), eye(10), eye(10)];
+    net = feedforwardnet([neuronai,ceil(neuronai/2)]);
+    net.trainParam.showWindow = 0;
+    P = cell2mat(pozymiai_tinklo_mokymui);
+    net = train(net,P,T);
+
+
+end
+
+
+%% FF testavimo funkcija
+function out=test_fun_ff(pozymiai_patikrai,test,net,print)
+    P2 = cell2mat(pozymiai_patikrai);
+    Y2 = net(P2);
+    [a2, b2] = max(Y2);
+    raidziu_sk = size(P2,2);
+    atsakymas = [];
+    for k = 1:raidziu_sk
+        atsakymas = [atsakymas, int2str(b2(k)-1)];
+    end
+    out=strcmp(atsakymas,test);
+    if print
+        if out
+           result ='good';
+        else
+            result ='fail';
+        end
+        fprintf("newff %s  result: %s  real: %s \n",result,atsakymas,test);
+    end   
+end
